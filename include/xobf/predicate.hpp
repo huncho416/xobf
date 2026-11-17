@@ -43,7 +43,8 @@ inline bool opaque_true_hashed() {
     std::uint64_t x = detail::opaque_seed;
     std::uint64_t h = detail::splitmix64(x ^ K);
     std::uint64_t g = detail::splitmix64(h);
-    return ((h * (h + 1ull)) & 1ull) == 0ull && (g | 1ull) != 0ull;
+    return (((h * (h + 1ull)) & 1ull) == 0ull) &&
+           (((g * (g + 1ull)) & 1ull) == 0ull);
 }
 
 template <std::uint64_t K>
