@@ -15,6 +15,11 @@ int main() {
     int vm_port = XOBF_VM_INT(443);
     std::printf("vm_port=%d\n", vm_port);
 
+    {
+        auto stacked = XOBF_STR_STACK("STACK_ONLY_SECRET_MARKER");
+        std::printf("%s\n", stacked.c_str());
+    }
+
     int a = magic, b = 42;
     std::printf("a+b=%d a-b=%d a^b=%d\n", xobf::mba::add(a, b),
                 xobf::mba::sub(a, b), xobf::mba::xor_(a, b));

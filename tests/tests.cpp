@@ -79,6 +79,26 @@ int main() {
     const char* as_ptr = XOBF_STR("implicit");
     CHECK(std::strcmp(as_ptr, "implicit") == 0);
 
+    {
+        auto ss = XOBF_STR_STACK("stack secret string");
+        CHECK(std::strcmp(ss.c_str(), "stack secret string") == 0);
+        CHECK(ss.verified());
+        CHECK(ss.size() == 19);
+    }
+
+    {
+        constexpr std::uint64_t tk = 0xABCDEF1234ull;
+        auto good = xobf::make_cipher<tk, 2>("tamper me");
+        auto bad = good;
+        bad.data[0] = static_cast<unsigned char>(bad.data[0] ^ 0xFF);
+        xobf::secret<sizeof("tamper me"), tk, 2> sg(good);
+        xobf::secret<sizeof("tamper me"), tk, 2> sb(bad);
+        CHECK(std::strcmp(sg.decrypt(), "tamper me") == 0);
+        CHECK(sg.verified());
+        sb.decrypt();
+        CHECK(!sb.verified());
+    }
+
     int port = XOBF_INT(8080);
     CHECK(port == 8080);
     std::uint64_t big = XOBF_INT((std::uint64_t)0xDEADBEEFCAFEull);
