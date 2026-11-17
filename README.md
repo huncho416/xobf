@@ -72,7 +72,9 @@ to a specific deobfuscation attack.
   an immediate.
 - `XOBF_VMSTR("s")` → `xobf::vm::vm_secret`; each 8-byte block of the string is reconstructed at
   runtime by a per-block encrypted VM program into a stack buffer wiped on destruction. Plaintext
-  is never stored; keep the returned object alive while using `.c_str()`.
+  is never stored; keep the returned object alive while using `.c_str()`. Strings use a **compact**
+  VM program (~152 B/block vs ~440 B for `XOBF_VM_INT`); tune the ceiling with
+  `-DXOBF_VM_STR_MAXLEN=<n>` (more slots = more mixing steps, larger programs).
 
 ### Arithmetic
 - `xobf::mba::add/sub/xor_/and_/or_(a, b)` — exact MBA identities for two's-complement integers.

@@ -21,23 +21,46 @@ enum : std::uint8_t {
 inline constexpr int VM_MAXLEN = 48;
 inline constexpr std::uint64_t VM_SEED0 = 0x9e3779b97f4a7c15ull;
 
-struct program {
-    std::uint8_t ops[VM_MAXLEN];
-    std::uint64_t args[VM_MAXLEN];
+#ifndef XOBF_VM_STR_MAXLEN
+#define XOBF_VM_STR_MAXLEN 16
+#endif
+
+inline constexpr int VM_STR_MAXLEN = XOBF_VM_STR_MAXLEN;
+inline constexpr int VM_STR_MINSTEPS = 6;
+inline constexpr int VM_STR_STEPSPAN = 6;
+
+template <int MAXLEN>
+struct program_t {
+    std::uint8_t ops[MAXLEN];
+    std::uint64_t args[MAXLEN];
     int len;
 };
+
+using program = program_t<VM_MAXLEN>;
+using cprogram = program_t<VM_STR_MAXLEN>;
 
 constexpr std::uint64_t vm_stream(std::uint64_t K, int i) {
     return ::xobf::detail::splitmix64(
         K ^ (0x100000001b3ull * (static_cast<std::uint64_t>(i) + 1ull)));
 }
 
-constexpr program build(std::uint64_t V, std::uint64_t K) {
-    program p{};
+template <int MAXLEN>
+constexpr program_t<MAXLEN> build_n(std::uint64_t V, std::uint64_t K,
+                                    int minsteps, int stepspan) {
+    program_t<MAXLEN> p{};
     ::xobf::detail::ctprng rng(K | 1ull);
     std::uint64_t acc = VM_SEED0;
     int n = 0;
-    int steps = 10 + static_cast<int>(rng.bounded(10));
+    int steps =
+        minsteps + (stepspan > 0
+                        ? static_cast<int>(rng.bounded(
+                              static_cast<std::uint64_t>(stepspan)))
+                        : 0);
+    int cap = MAXLEN - 2;
+    if (steps > cap)
+        steps = cap;
+    if (steps < 0)
+        steps = 0;
     for (int i = 0; i < steps; ++i) {
         std::uint64_t r = rng.next();
         unsigned c = static_cast<unsigned>(rng.bounded(5));
@@ -84,12 +107,21 @@ constexpr program build(std::uint64_t V, std::uint64_t K) {
     return p;
 }
 
+constexpr program build(std::uint64_t V, std::uint64_t K) {
+    return build_n<VM_MAXLEN>(V, K, 10, 10);
+}
+
+constexpr cprogram build_str(std::uint64_t V, std::uint64_t K) {
+    return build_n<VM_STR_MAXLEN>(V, K, VM_STR_MINSTEPS, VM_STR_STEPSPAN);
+}
+
 template <std::uint64_t V, std::uint64_t K>
 struct prog {
     static constexpr program value = build(V, K);
 };
 
-XOBF_NOINLINE inline std::uint64_t interpret(const program& p, std::uint64_t K) {
+template <typename P>
+XOBF_NOINLINE std::uint64_t interpret(const P& p, std::uint64_t K) {
     std::uint64_t acc = ::xobf::detail::opaque_seed;
     for (int i = 0; i < p.len; ++i) {
         std::uint64_t ks = vm_stream(K, i);
@@ -126,7 +158,7 @@ constexpr std::uint64_t vmstr_key(std::uint64_t K, std::size_t b) {
 template <std::size_t N, std::uint64_t K>
 struct vm_cipher {
     static constexpr std::size_t NB = (N + 7) / 8;
-    program progs[NB];
+    cprogram progs[NB];
     std::uint64_t keys[NB];
 
     constexpr vm_cipher(const char (&s)[N]) : progs{}, keys{} {
@@ -142,8 +174,8 @@ struct vm_cipher {
             }
             std::uint64_t kb = vmstr_key(K, b);
             keys[b] = kb;
-            program pr = build(pv, kb);
-            for (int i = 0; i < VM_MAXLEN; ++i) {
+            cprogram pr = build_str(pv, kb);
+            for (int i = 0; i < VM_STR_MAXLEN; ++i) {
                 progs[b].ops[i] = pr.ops[i];
                 progs[b].args[i] = pr.args[i];
             }

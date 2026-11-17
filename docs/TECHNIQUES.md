@@ -65,7 +65,11 @@ interpreter, seeded from `opaque_seed`, reconstructs the value on the stack — 
 as an immediate. This is the strongest static-recovery barrier in the library for scalar values.
 `XOBF_VMSTR` extends the same mechanism to strings: the literal is split into 8-byte blocks, each
 compiled to its own encrypted VM program, and reconstructed block-by-block into a stack buffer at
-runtime — neither plaintext nor an XOR-decryptable ciphertext of it is stored.
+runtime — neither plaintext nor an XOR-decryptable ciphertext of it is stored. String blocks use a
+**compact** program encoding (fewer mixing steps and a tighter slot array, ~152 bytes/block versus
+~440 for the full `XOBF_VM_INT` program), cutting the stored-program overhead by roughly 65% while
+keeping a non-trivial per-block reconstruction chain. The ceiling is tunable with
+`-DXOBF_VM_STR_MAXLEN=<n>` to trade size against the number of mixing steps.
 **Trade-off**: interpreter overhead per value/block and added build time plus per-block program
 size; use for high-value constants and the most sensitive strings.
 
