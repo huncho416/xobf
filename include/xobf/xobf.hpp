@@ -1,5 +1,7 @@
 #pragma once
 
+#include "antidebug.hpp"
+#include "antitamper.hpp"
 #include "cflow.hpp"
 #include "config.hpp"
 #include "constant.hpp"
