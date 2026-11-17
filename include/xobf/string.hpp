@@ -146,8 +146,9 @@ class stack_secret {
 
 public:
     explicit stack_secret(const cipher<N, K, R>& c) : buf_{} {
+        const volatile unsigned char* src = c.data;
         for (std::size_t i = 0; i < N; ++i)
-            buf_[i] = static_cast<char>(c.data[i]);
+            buf_[i] = static_cast<char>(src[i]);
         for (int r = R - 1; r >= 0; --r) {
             unsigned op = detail::stropsel(K, r);
             for (std::size_t i = 0; i < N; ++i)

@@ -113,6 +113,8 @@ static long flat_sum(int n) {
     return acc;
 }
 
+static int add3(int a, int b, int c) { return a + b + c; }
+
 int main() {
     for (int n = 1; n <= 64; ++n)
         CHECK(flat_collatz(n) == plain_collatz(n));
@@ -235,6 +237,34 @@ int main() {
 
     CHECK(xobf::is_debugged() == false);
     CHECK(xobf::timing_tripped(1000000000ull) == false);
+
+    {
+        auto h = XOBF_HIDDEN(&add3);
+        CHECK(h(2, 3, 4) == 9);
+        CHECK(h.get() != nullptr);
+        CHECK(h.get()(10, 20, 30) == 60);
+        int acc = 0;
+        for (int i = 0; i < 8; ++i)
+            acc += h(i, i, i);
+        CHECK(acc == 3 * (0 + 1 + 2 + 3 + 4 + 5 + 6 + 7));
+    }
+
+    {
+        using atoi_t = int (*)(const char*);
+        auto p = XOBF_API_MAIN(atoi_t, "atoi");
+        CHECK(p != nullptr);
+        if (p)
+            CHECK(p("12345") == 12345);
+
+        using toupper_t = int (*)(int);
+        auto t = XOBF_API_MAIN(toupper_t, "toupper");
+        CHECK(t != nullptr);
+        if (t)
+            CHECK(t('a') == 'A');
+
+        CHECK(xobf::api_hash("atoi") == xobf::api_hash("atoi"));
+        CHECK(xobf::api_hash("atoi") != xobf::api_hash("toupper"));
+    }
 
     if (g_failures == 0) {
         std::puts("ALL TESTS PASSED");

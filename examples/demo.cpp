@@ -20,6 +20,11 @@ int main() {
         std::printf("%s\n", stacked.c_str());
     }
 
+    {
+        auto shortstk = XOBF_STR_STACK("SHORTMRK");
+        std::printf("%s\n", shortstk.c_str());
+    }
+
     int a = magic, b = 42;
     std::printf("a+b=%d a-b=%d a^b=%d\n", xobf::mba::add(a, b),
                 xobf::mba::sub(a, b), xobf::mba::xor_(a, b));
