@@ -115,11 +115,54 @@ static long flat_sum(int n) {
 
 static int add3(int a, int b, int c) { return a + b + c; }
 
+static int dflat_collatz(int n) {
+    int steps = 0;
+    XOBF_DFLATTEN_BEGIN(1)
+    XOBF_DCASE(1)
+    if (n <= 1)
+        XOBF_DFLATTEN_EXIT_TO(dflat_done_a);
+    XOBF_DGOTO_IF((n & 1) != 0, 3)
+    XOBF_DGOTO(2)
+    XOBF_DCASE(2)
+    n /= 2;
+    ++steps;
+    XOBF_DGOTO(1)
+    XOBF_DCASE(3)
+    n = 3 * n + 1;
+    ++steps;
+    XOBF_DGOTO(1)
+    XOBF_DFLATTEN_END(dflat_done_a)
+    return steps;
+}
+
+static long dflat_sum(int n) {
+    long acc = 0;
+    int i = 0;
+    XOBF_DFLATTEN_BEGIN(10)
+    XOBF_DCASE(10)
+    XOBF_DGOTO_IF(i > n, 30)
+    XOBF_DGOTO(20)
+    XOBF_DCASE(20)
+    acc += static_cast<long>(XOBF_OPAQUE(i));
+    XOBF_JUNK();
+    ++i;
+    XOBF_DGOTO(10)
+    XOBF_DCASE(30)
+    XOBF_DFLATTEN_EXIT_TO(dflat_done_b);
+    XOBF_DFLATTEN_END(dflat_done_b)
+    return acc;
+}
+
 int main() {
     for (int n = 1; n <= 64; ++n)
         CHECK(flat_collatz(n) == plain_collatz(n));
     for (int n = 0; n <= 100; ++n)
         CHECK(flat_sum(n) == (long)n * (n + 1) / 2);
+
+    for (int n = 1; n <= 64; ++n)
+        CHECK(dflat_collatz(n) == plain_collatz(n));
+    for (int n = 0; n <= 100; ++n)
+        CHECK(dflat_sum(n) == (long)n * (n + 1) / 2);
 
     auto& s1 = XOBF_STR("hello world");
     CHECK(s1.is_encrypted());
