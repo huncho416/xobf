@@ -26,6 +26,24 @@ static long flat_triangle(int n) {
     return acc;
 }
 
+static long dflat_factorial(int n) {
+    long acc = 1;
+    int i = 1;
+    XOBF_DFLATTEN_BEGIN(1)
+    XOBF_DCASE(1)
+    XOBF_DGOTO_IF(i > n, 3)
+    XOBF_DGOTO(2)
+    XOBF_DCASE(2)
+    acc *= static_cast<long>(XOBF_OPAQUE(i));
+    XOBF_JUNK();
+    ++i;
+    XOBF_DGOTO(1)
+    XOBF_DCASE(3)
+    XOBF_DFLATTEN_EXIT_TO(dflat_factorial_done);
+    XOBF_DFLATTEN_END(dflat_factorial_done)
+    return acc;
+}
+
 int main() {
     std::printf("%s\n", XOBF_STR("SUPER_SECRET_API_TOKEN_MARKER").decrypt());
 
@@ -60,6 +78,7 @@ int main() {
     }
 
     std::printf("triangle(10)=%ld\n", flat_triangle(10));
+    std::printf("factorial(6)=%ld\n", dflat_factorial(6));
 
     {
         static const unsigned char region[] = {0x10, 0x20, 0x30, 0x40};

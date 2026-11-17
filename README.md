@@ -50,7 +50,7 @@ Build: `clang++ -std=c++17 -O2 -Iinclude your.cpp` (also tested with `g++`).
 | `vm.hpp` | `XOBF_VM_INT`, `XOBF_VMSTR` | compile-time→runtime bytecode VM, per-build opcode permutation; VM-reconstructed strings | static constant/string recovery, pattern matching | medium |
 | `mba.hpp` | `xobf::mba::add/sub/xor_/and_/or_`, `*_poly<K>`, `mix<K,D>` | diverse Mixed Boolean-Arithmetic trees + reversible identity mixer | algebraic simplification, MBA pattern rules | low–med |
 | `predicate.hpp` | `XOBF_BOGUS`, `XOBF_DEAD`, `opaque_true*/false*` | runtime-seeded, hash, and path-explosion opaque predicates | symbolic/concolic execution, path pruning | low |
-| `cflow.hpp` | `XOBF_FLATTEN_*`, `XOBF_JUNK`, `XOBF_OPAQUE` | source-level control-flow flattening + junk insertion | CFG recovery, decompiler structuring | medium |
+| `cflow.hpp` | `XOBF_FLATTEN_*`, `XOBF_DFLATTEN_*`, `XOBF_JUNK`, `XOBF_OPAQUE` | control-flow flattening (shallow + deep: scrambled dispatcher tokens, runtime-masked state) + junk insertion | CFG recovery, decompiler structuring, state-value inference | medium |
 | `callhide.hpp` | `XOBF_HIDDEN` | encrypted function-pointer table with decoys, indirect dispatch | static call-graph recovery | low |
 | `apihash.hpp` | `XOBF_API`, `XOBF_API_MAIN` | API resolved via the standard loader with compile-time-encrypted names | plaintext API name scraping | low |
 | `antidebug.hpp` | `xobf::is_debugged`, `timing_tripped`, `under_analysis`, `XOBF_IF_DEBUGGED`, `XOBF_CRASH_IF_DEBUGGED` | TracerPid / `IsDebuggerPresent` / timing probes | live debugging | low |
@@ -83,6 +83,10 @@ to a specific deobfuscation attack.
 ### Control flow
 - `XOBF_FLATTEN_BEGIN(entry) … XOBF_CASE(n) … XOBF_GOTO(n) / XOBF_GOTO_IF(cond, n) …
   XOBF_FLATTEN_EXIT_TO(label) … XOBF_FLATTEN_END(label)` — dispatcher-driven state machine.
+- `XOBF_DFLATTEN_BEGIN/DCASE/DGOTO/DGOTO_IF/DFLATTEN_EXIT_TO/DFLATTEN_END` — deep variant with the
+  same shape, but logical states are mapped through a per-site bijective scramble to non-sequential
+  32-bit dispatcher tokens and the live state is XOR-masked by a runtime-seeded value, so the state
+  numbering is neither visible as small constants nor statically threadable.
 - `XOBF_OPAQUE(v)` — identity that launders `v` through the runtime seed.
 - `XOBF_JUNK()` — data-dependent dead code behind an opaque-false predicate.
 - `XOBF_BOGUS(stmt...)` / `XOBF_DEAD(stmt...)` — run `stmt` behind an always-true predicate with

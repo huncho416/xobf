@@ -90,9 +90,14 @@ code off a provably-false branch.
 ### `cflow.hpp` — control-flow flattening (attack 2)
 `XOBF_FLATTEN_*` rewrites straight-line/branching code into a `switch`-dispatched state machine
 driven by a `volatile` state variable, collapsing the natural CFG into a dispatcher that frustrates
-decompiler structuring. `XOBF_OPAQUE` launders values through the runtime seed and `XOBF_JUNK`
-inserts data-dependent dead code. **Trade-off**: dispatcher overhead on hot paths; flatten
-security-relevant routines, not tight loops.
+decompiler structuring. `XOBF_DFLATTEN_*` is a deeper variant: each logical state is mapped through
+a per-site bijective scramble (`flat_tok`) to a non-sequential 32-bit dispatcher token, and the live
+state variable is XOR-masked with a runtime-seeded value (`flat_mask`). In the shallow dispatcher an
+analyst reads the state numbering directly from `cmp $0x1/$0x2/$0x3`; in the deep dispatcher the same
+machine compares against scrambled tokens (e.g. `cmp $0x2b320167`) that the compiler cannot thread
+back together because the mask is only known at runtime. `XOBF_OPAQUE` launders values through the
+runtime seed and `XOBF_JUNK` inserts data-dependent dead code. **Trade-off**: dispatcher overhead on
+hot paths, slightly higher for the deep variant; flatten security-relevant routines, not tight loops.
 
 ### `callhide.hpp` — call-graph hiding (attack 2)
 `XOBF_HIDDEN(&fn)` stores the real function pointer XOR-masked at a key-derived index among decoy
@@ -125,7 +130,7 @@ with the other layers.
 - Encrypt every embedded secret with `XOBF_STR`/`XOBF_STR_STACK` and every sensitive literal with
   `XOBF_INT`/`XOBF_VM_INT`.
 - Flatten and `XOBF_BOGUS`/`XOBF_JUNK` the routines that implement license and integrity logic,
-  not performance-critical inner loops.
+  not performance-critical inner loops. Use `XOBF_DFLATTEN_*` for the most sensitive routines.
 - Gate critical paths on `under_analysis()` and verify integrity with `XOBF_VERIFY_OR` at points
   spread through execution rather than one up-front check.
 - Raise `XOBF_LEVEL` for release builds; keep it low for debugging.
