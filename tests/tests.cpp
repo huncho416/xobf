@@ -216,6 +216,26 @@ int main() {
     XOBF_DEAD(dead = 1);
     CHECK(dead == 0);
 
+    {
+        static const unsigned char blob[] = {0xDE, 0xAD, 0xBE, 0xEF,
+                                             0x00, 0x7F, 0x80, 0xFF};
+        std::uint64_t ref = 0xcbf29ce484222325ull;
+        for (unsigned char bb : blob) {
+            ref ^= bb;
+            ref *= 0x100000001b3ull;
+        }
+        std::uint64_t cs = xobf::code_checksum(blob, sizeof(blob));
+        CHECK(cs == ref);
+        CHECK(cs == xobf::code_checksum(blob, sizeof(blob)));
+        CHECK(xobf::verify_checksum(blob, sizeof(blob), ref));
+        CHECK(!xobf::verify_checksum(blob, sizeof(blob), ref ^ 1ull));
+        CHECK(xobf::region_checksum(blob, blob + sizeof(blob)) == ref);
+        CHECK(xobf::region_checksum(blob + 4, blob) == 0ull);
+    }
+
+    CHECK(xobf::is_debugged() == false);
+    CHECK(xobf::timing_tripped(1000000000ull) == false);
+
     if (g_failures == 0) {
         std::puts("ALL TESTS PASSED");
         return 0;
