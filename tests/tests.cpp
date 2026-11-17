@@ -266,6 +266,7 @@ int main() {
         CHECK(std::strcmp(v4.c_str(), "exactly_8") == 0);
         auto v5 = XOBF_VMSTR("0123456789ABCDEF0123456789");
         CHECK(std::strcmp(v5.c_str(), "0123456789ABCDEF0123456789") == 0);
+        CHECK(sizeof(xobf::vm::cprogram) < sizeof(xobf::vm::program));
     }
 
     int reached = 0;
