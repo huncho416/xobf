@@ -211,6 +211,20 @@ int main() {
         CHECK(sum == 400);
     }
 
+    {
+        auto v1 = XOBF_VMSTR("vm string secret");
+        CHECK(std::strcmp(v1.c_str(), "vm string secret") == 0);
+        CHECK(v1.size() == 16);
+        auto v2 = XOBF_VMSTR("x");
+        CHECK(std::strcmp(v2.c_str(), "x") == 0);
+        auto v3 = XOBF_VMSTR("");
+        CHECK(std::strcmp(v3.c_str(), "") == 0);
+        auto v4 = XOBF_VMSTR("exactly_8");
+        CHECK(std::strcmp(v4.c_str(), "exactly_8") == 0);
+        auto v5 = XOBF_VMSTR("0123456789ABCDEF0123456789");
+        CHECK(std::strcmp(v5.c_str(), "0123456789ABCDEF0123456789") == 0);
+    }
+
     int reached = 0;
     XOBF_BOGUS(reached = 1);
     CHECK(reached == 1);

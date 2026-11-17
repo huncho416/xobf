@@ -63,7 +63,11 @@ stack machine (XOR/ADD/SUB/ROL/MUL/OUT). Opcodes and operands are XOR-masked wit
 keystream, so the VM has no fixed byte signature across builds. At runtime a `NOINLINE`
 interpreter, seeded from `opaque_seed`, reconstructs the value on the stack — it never appears
 as an immediate. This is the strongest static-recovery barrier in the library for scalar values.
-**Trade-off**: interpreter overhead per value and added build time; use for high-value constants.
+`XOBF_VMSTR` extends the same mechanism to strings: the literal is split into 8-byte blocks, each
+compiled to its own encrypted VM program, and reconstructed block-by-block into a stack buffer at
+runtime — neither plaintext nor an XOR-decryptable ciphertext of it is stored.
+**Trade-off**: interpreter overhead per value/block and added build time plus per-block program
+size; use for high-value constants and the most sensitive strings.
 
 ### `mba.hpp` — Mixed Boolean-Arithmetic (attack 2, 3)
 Exact identities for two's-complement integers (e.g. `a+b == (a^b)+2*(a&b)`), plus `*_poly<K>`

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <type_traits>
 
@@ -88,9 +89,7 @@ struct prog {
     static constexpr program value = build(V, K);
 };
 
-template <std::uint64_t V, std::uint64_t K>
-XOBF_NOINLINE std::uint64_t run() {
-    const program& p = prog<V, K>::value;
+XOBF_NOINLINE inline std::uint64_t interpret(const program& p, std::uint64_t K) {
     std::uint64_t acc = ::xobf::detail::opaque_seed;
     for (int i = 0; i < p.len; ++i) {
         std::uint64_t ks = vm_stream(K, i);
@@ -114,6 +113,73 @@ XOBF_NOINLINE std::uint64_t run() {
     return acc;
 }
 
+template <std::uint64_t V, std::uint64_t K>
+XOBF_NOINLINE std::uint64_t run() {
+    return interpret(prog<V, K>::value, K);
+}
+
+constexpr std::uint64_t vmstr_key(std::uint64_t K, std::size_t b) {
+    return ::xobf::detail::splitmix64(
+        K ^ (0x9e3779b97f4a7c15ull * (static_cast<std::uint64_t>(b) + 1ull)));
+}
+
+template <std::size_t N, std::uint64_t K>
+struct vm_cipher {
+    static constexpr std::size_t NB = (N + 7) / 8;
+    program progs[NB];
+    std::uint64_t keys[NB];
+
+    constexpr vm_cipher(const char (&s)[N]) : progs{}, keys{} {
+        for (std::size_t b = 0; b < NB; ++b) {
+            std::uint64_t pv = 0;
+            for (std::size_t j = 0; j < 8; ++j) {
+                std::size_t idx = b * 8 + j;
+                std::uint64_t c =
+                    idx < N ? static_cast<std::uint64_t>(
+                                  static_cast<unsigned char>(s[idx]))
+                            : 0ull;
+                pv |= c << (8 * j);
+            }
+            std::uint64_t kb = vmstr_key(K, b);
+            keys[b] = kb;
+            program pr = build(pv, kb);
+            for (int i = 0; i < VM_MAXLEN; ++i) {
+                progs[b].ops[i] = pr.ops[i];
+                progs[b].args[i] = pr.args[i];
+            }
+            progs[b].len = pr.len;
+        }
+    }
+};
+
+template <std::size_t N, std::uint64_t K>
+class vm_secret {
+    char buf_[N];
+
+public:
+    explicit vm_secret(const vm_cipher<N, K>& c) : buf_{} {
+        for (std::size_t b = 0; b < vm_cipher<N, K>::NB; ++b) {
+            std::uint64_t pv = interpret(c.progs[b], c.keys[b]);
+            for (std::size_t j = 0; j < 8; ++j) {
+                std::size_t idx = b * 8 + j;
+                if (idx < N)
+                    buf_[idx] =
+                        static_cast<char>((pv >> (8 * j)) & 0xFFull);
+            }
+        }
+    }
+
+    ~vm_secret() {
+        volatile char* p = buf_;
+        for (std::size_t i = 0; i < N; ++i)
+            p[i] = 0;
+    }
+
+    const char* c_str() const { return buf_; }
+    operator const char*() const { return buf_; }
+    constexpr std::size_t size() const { return N - 1; }
+};
+
 }  // namespace xobf::vm
 
 #define XOBF_VM_INT(value)                                                 \
@@ -125,4 +191,12 @@ XOBF_NOINLINE std::uint64_t run() {
             static_cast<std::uint64_t>(static_cast<xobf_u>(value));        \
         return static_cast<xobf_t>(                                        \
             static_cast<xobf_u>(::xobf::vm::run<xobf_v, xobf_k>()));        \
+    }())
+
+#define XOBF_VMSTR(str)                                                     \
+    ([]() {                                                                 \
+        constexpr std::uint64_t xobf_k = XOBF_KEY;                         \
+        constexpr std::size_t xobf_n = sizeof(str) / sizeof((str)[0]);     \
+        constexpr ::xobf::vm::vm_cipher<xobf_n, xobf_k> xobf_c(str);       \
+        return ::xobf::vm::vm_secret<xobf_n, xobf_k>(xobf_c);              \
     }())
