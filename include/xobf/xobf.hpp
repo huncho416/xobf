@@ -2,6 +2,8 @@
 
 #include "antidebug.hpp"
 #include "antitamper.hpp"
+#include "apihash.hpp"
+#include "callhide.hpp"
 #include "cflow.hpp"
 #include "config.hpp"
 #include "constant.hpp"

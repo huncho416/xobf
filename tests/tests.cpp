@@ -63,6 +63,8 @@ static void test_mix_type() {
     }
 }
 
+static int xobf_test_add3(int a, int b, int c) { return a + b + c; }
+
 static int plain_collatz(int n) {
     int s = 0;
     while (n > 1) {
@@ -235,6 +237,28 @@ int main() {
 
     CHECK(xobf::is_debugged() == false);
     CHECK(xobf::timing_tripped(1000000000ull) == false);
+
+    {
+        auto hadd = XOBF_HIDE_FN(&xobf_test_add3);
+        CHECK(hadd(2, 3, 4) == 9);
+        auto hadd2 = XOBF_HIDE_FN(&xobf_test_add3);
+        CHECK(hadd2(10, 20, 30) == 60);
+    }
+
+#if defined(XOBF_OS_LINUX)
+    {
+        using atoi_t = int (*)(const char*);
+        atoi_t ai = XOBF_RESOLVE_AS(atoi_t, "atoi");
+        CHECK(ai != nullptr);
+        if (ai)
+            CHECK(ai("123") == 123);
+        using toupper_t = int (*)(int);
+        toupper_t tu = XOBF_RESOLVE_AS(toupper_t, "toupper");
+        CHECK(tu != nullptr);
+        if (tu)
+            CHECK(tu('a') == 'A');
+    }
+#endif
 
     if (g_failures == 0) {
         std::puts("ALL TESTS PASSED");
