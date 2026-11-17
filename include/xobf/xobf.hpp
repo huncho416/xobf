@@ -7,6 +7,7 @@
 #include "predicate.hpp"
 #include "random.hpp"
 #include "string.hpp"
+#include "vm.hpp"
 
 #define XOBF_VERSION_MAJOR 2
 #define XOBF_VERSION_MINOR 0
