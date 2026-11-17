@@ -45,6 +45,11 @@ int main() {
         std::printf("%s\n", shortstk.c_str());
     }
 
+    {
+        auto vmstr = XOBF_VMSTR("VM_STRING_SECRET_MARKER");
+        std::printf("%s\n", vmstr.c_str());
+    }
+
     int a = magic, b = 42;
     std::printf("a+b=%d a-b=%d a^b=%d\n", xobf::mba::add(a, b),
                 xobf::mba::sub(a, b), xobf::mba::xor_(a, b));

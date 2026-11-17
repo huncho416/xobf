@@ -47,7 +47,7 @@ Build: `clang++ -std=c++17 -O2 -Iinclude your.cpp` (also tested with `g++`).
 |--------|-----------|-----------|---------------------------|------|
 | `string.hpp` | `XOBF_STR`, `XOBF_STR_STACK` | multi-round polymorphic string cipher; stack-only decrypt; payload checksum | static strings/`strings`, patching | low |
 | `constant.hpp` | `XOBF_INT` | decoy-vault + MBA-decoded integer constants | immediate scraping, constant folding | low |
-| `vm.hpp` | `XOBF_VM_INT` | compile-time→runtime bytecode VM, per-build opcode permutation | static constant recovery, pattern matching | medium |
+| `vm.hpp` | `XOBF_VM_INT`, `XOBF_VMSTR` | compile-time→runtime bytecode VM, per-build opcode permutation; VM-reconstructed strings | static constant/string recovery, pattern matching | medium |
 | `mba.hpp` | `xobf::mba::add/sub/xor_/and_/or_`, `*_poly<K>`, `mix<K,D>` | diverse Mixed Boolean-Arithmetic trees + reversible identity mixer | algebraic simplification, MBA pattern rules | low–med |
 | `predicate.hpp` | `XOBF_BOGUS`, `XOBF_DEAD`, `opaque_true*/false*` | runtime-seeded, hash, and path-explosion opaque predicates | symbolic/concolic execution, path pruning | low |
 | `cflow.hpp` | `XOBF_FLATTEN_*`, `XOBF_JUNK`, `XOBF_OPAQUE` | source-level control-flow flattening + junk insertion | CFG recovery, decompiler structuring | medium |
@@ -70,6 +70,9 @@ to a specific deobfuscation attack.
   identity mixer behind a `volatile` barrier.
 - `XOBF_VM_INT(v)` → value reconstructed at runtime by the stack bytecode VM; never present as
   an immediate.
+- `XOBF_VMSTR("s")` → `xobf::vm::vm_secret`; each 8-byte block of the string is reconstructed at
+  runtime by a per-block encrypted VM program into a stack buffer wiped on destruction. Plaintext
+  is never stored; keep the returned object alive while using `.c_str()`.
 
 ### Arithmetic
 - `xobf::mba::add/sub/xor_/and_/or_(a, b)` — exact MBA identities for two's-complement integers.
