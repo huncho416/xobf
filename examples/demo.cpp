@@ -12,6 +12,9 @@ int main() {
     int magic = XOBF_INT(1337);
     std::printf("magic=%d\n", magic);
 
+    int vm_port = XOBF_VM_INT(443);
+    std::printf("vm_port=%d\n", vm_port);
+
     int a = magic, b = 42;
     std::printf("a+b=%d a-b=%d a^b=%d\n", xobf::mba::add(a, b),
                 xobf::mba::sub(a, b), xobf::mba::xor_(a, b));

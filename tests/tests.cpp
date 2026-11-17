@@ -116,6 +116,24 @@ int main() {
     CHECK((xobf::opaque_true_hashed<0x55>()) == true);
     CHECK((xobf::opaque_true_explode<0x77>()) == true);
 
+    CHECK(XOBF_VM_INT(0) == 0);
+    CHECK(XOBF_VM_INT(1) == 1);
+    CHECK(XOBF_VM_INT(8080) == 8080);
+    CHECK(XOBF_VM_INT(-31337) == -31337);
+    CHECK(XOBF_VM_INT(1337) == 1337);
+    CHECK(XOBF_VM_INT((unsigned)0xFFFFFFFFu) == 0xFFFFFFFFu);
+    CHECK(XOBF_VM_INT((std::uint64_t)0xC0FFEE1234567890ull) ==
+          0xC0FFEE1234567890ull);
+    CHECK(XOBF_VM_INT((std::int64_t)-1) == (std::int64_t)-1);
+    CHECK(XOBF_VM_INT((char)'Q') == 'Q');
+    CHECK(XOBF_VM_INT((short)-12345) == (short)-12345);
+    {
+        int sum = 0;
+        for (int i = 0; i < 4; ++i)
+            sum += XOBF_VM_INT(100);
+        CHECK(sum == 400);
+    }
+
     int reached = 0;
     XOBF_BOGUS(reached = 1);
     CHECK(reached == 1);
