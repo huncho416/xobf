@@ -1,6 +1,3 @@
-// xobf/inline.hpp : cross-compiler inlining control.
-// Forcing/ preventing inlining changes the shape of the generated code, which
-// is useful when combining with the other passes.
 #pragma once
 
 #if defined(_MSC_VER)
